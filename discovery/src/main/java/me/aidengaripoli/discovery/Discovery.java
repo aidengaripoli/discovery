@@ -10,7 +10,6 @@ import java.math.BigInteger;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
@@ -61,6 +60,10 @@ public final class Discovery {
             } catch (Exception e) {
                 callback.discoveryFailure();
                 return;
+            } finally {
+                if (socket != null) {
+                    socket.close();
+                }
             }
 
             if (censusList.size() > 0) {
@@ -68,6 +71,9 @@ public final class Discovery {
             } else {
                 callback.noDevicesFound();
             }
+
+            censusList.clear();
+            previousCensusList.clear();
         }).start();
     }
 
