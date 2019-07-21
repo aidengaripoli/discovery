@@ -1,11 +1,26 @@
 package me.aidengaripoli.discovery;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.net.InetAddress;
 
 /**
  *
  */
-public class Device {
+public class Device implements Parcelable {
+
+    public static final Creator<Device> CREATOR = new Creator<Device>() {
+        @Override
+        public Device createFromParcel(Parcel in) {
+            return new Device(in);
+        }
+
+        @Override
+        public Device[] newArray(int size) {
+            return new Device[size];
+        }
+    };
 
     private String macAddress;
 
@@ -20,6 +35,13 @@ public class Device {
         this.ipAddress = ipAddress;
         this.status = status;
         this.visibility = visibility;
+    }
+
+    protected Device(Parcel in) {
+        macAddress = in.readString();
+        ipAddress = (InetAddress) in.readSerializable();
+        status = in.readInt();
+        visibility = in.readInt();
     }
 
     public String getMacAddress() {
@@ -41,5 +63,18 @@ public class Device {
     @Override
     public String toString() {
         return macAddress + "," + ipAddress + "," + status + "," + visibility;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(macAddress);
+        dest.writeSerializable(ipAddress);
+        dest.writeInt(status);
+        dest.writeInt(visibility);
     }
 }
