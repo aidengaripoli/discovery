@@ -26,9 +26,11 @@ public final class Discovery {
     private static final String TAG = Discovery.class.getSimpleName();
     private static final String BROADCAST_ADDRESS = "255.255.255.255";
     private static final int UDP_PORT = 8888;
-    private static final int REPLY_BUFFER_SIZE = 21;
+    private static final int REPLY_BUFFER_SIZE = 25;
     private static final int SOCKET_TIMEOUT_IN_MILLIS = 1000;
     private static final int LISTEN_TIMEOUT_IN_MILLIS = 1000;
+    private static final String DISCOVERY_REQUEST_CODE = "300";
+    private static final String DISCOVERY_RESPONSE_CODE = "310";
 
     private DatagramSocket socket;
     private WifiManager wifiManager;
@@ -134,9 +136,12 @@ public final class Discovery {
         Log.d(TAG, "Broadcasting list...");
         byte[] buffer;
 
-        String censusListString = censusList.size() > 0
-                ? TextUtils.join("-", censusList)
-                : "EMPTY";
+        String censusListString = DISCOVERY_REQUEST_CODE;
+
+        if (censusList.size() > 0) {
+            censusListString += "|" + TextUtils.join("-", censusList);
+        }
+
         buffer = censusListString.getBytes();
 
         DatagramPacket packet = new DatagramPacket(
@@ -184,14 +189,22 @@ public final class Discovery {
 
             Log.d(TAG, "Received reply from: " + replyPacket.getAddress().getHostAddress());
 
-            String[] deviceString = new String(receiveBuffer).split(",");
-            Device device = new Device(
-                    deviceString[0],
-                    replyPacket.getAddress(),
-                    Integer.parseInt(deviceString[1]),
-                    Integer.parseInt(deviceString[2])
-            );
-            devices.add(device);
+            try {
+                String[] contents = new String(receiveBuffer).split("\\|");
+                if (!contents[0].equals(DISCOVERY_RESPONSE_CODE)) {
+                    throw new Exception();
+                }
+                String[] deviceString = contents[1].split(",");
+                Device device = new Device(
+                        deviceString[0],
+                        replyPacket.getAddress(),
+                        Integer.parseInt(deviceString[1]),
+                        Integer.parseInt(deviceString[2])
+                );
+                devices.add(device);
+            } catch (Exception e) {
+                Log.d(TAG, "Device is not compliant, ignoring.");
+            }
         }
 
         return devices;
